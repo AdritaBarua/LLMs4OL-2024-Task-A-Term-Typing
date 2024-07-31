@@ -1,14 +1,4 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[16]:
-
-
 import json
-
-
-# In[2]:
-
 
 #preapring the dataset
 #wordnet
@@ -46,10 +36,6 @@ with open('wordnet_train.jsonl', 'w') as file:
 
 print("The JSON file has been successfully converted to JSONL format.")
 
-
-# In[5]:
-
-
 #preapring the dataset
 #geonames
 
@@ -80,10 +66,6 @@ with open('geonames_train.jsonl', 'w') as file:
         file.write(json.dumps(entry) + "\n")
 
 print("The JSON file has been successfully converted to JSONL format.")
-
-
-# In[11]:
-
 
 #preapring the dataset
 #UMLS medcin
@@ -116,10 +98,6 @@ with open('medcin_train.jsonl', 'w') as file:
 
 print("The JSON file has been successfully converted to JSONL format.")
 
-
-# In[12]:
-
-
 #preapring the dataset
 #UMLS nci
 
@@ -150,10 +128,6 @@ with open('nci_train.jsonl', 'w') as file:
         file.write(json.dumps(entry) + "\n")
 
 print("The JSON file has been successfully converted to JSONL format.")
-
-
-# In[13]:
-
 
 #preapring the dataset
 #UMLS snomedct_us
@@ -187,27 +161,13 @@ with open('snomedct_us_train.jsonl', 'w') as file:
 print("The JSON file has been successfully converted to JSONL format.")
 
 
-# In[5]:
-
-
 pip install openai --user
-
-
-# In[6]:
-
 
 pip install openai --upgrade 
 
 
-# In[17]:
-
-
 import openai
 print(openai.VERSION)
-
-
-# In[28]:
-
 
 #upload the training dataset for fine-tuning
 import openai
@@ -231,9 +191,6 @@ def upload_file_for_fine_tuning(file_path):
 upload_file_for_fine_tuning("wordnet_train.jsonl")
 
 
-# In[29]:
-
-
 #creating the fine-tuning job
 def create_fine_tuning_job(training_file_id, model="gpt-3.5-turbo-0125", suffix="Biological_p_all"):
     try:
@@ -250,15 +207,8 @@ def create_fine_tuning_job(training_file_id, model="gpt-3.5-turbo-0125", suffix=
 training_file_id = "file-tAzN3X2PJfZk1RHJdDlYYBcd" # replace with your training file id
 create_fine_tuning_job(training_file_id, model="gpt-3.5-turbo-0125", suffix="wordnet_all")  # Change model and suffix as needed
 
-
-# In[31]:
-
-
 # Retrieve the state of a fine-tune
 client.fine_tuning.jobs.retrieve("ftjob-13vPfnbqztHnpD9Awq8TT4xd") # replace with your job id
-
-
-# In[17]:
 
 
 #evaluating results - wordnet
@@ -321,10 +271,6 @@ input_file = 'A.1(FS)_WordNet_Test.json'  # Replace with your input file path
 output_file = 'output_wordnet.json'  # Replace with your output file path
 process_file(input_file, output_file)
 
-
-# In[18]:
-
-
 #Cleaning up the output file - wordnet
 import json
 
@@ -350,10 +296,6 @@ def extract_last_word_from_type(input_file, output_file):
 input_file = 'output_wordnet.json'  # Replace with your input file path
 output_file = 'output_wordnet_new.json'  # Replace with your output file path
 extract_last_word_from_type(input_file, output_file)
-
-
-# In[ ]:
-
 
 #evaluating results - geonames 
 import openai
@@ -424,10 +366,6 @@ input_file = 'A.2(FS)_GeoNames_Test.json'  # Replace with your input file path
 output_file = 'output_geonames.json'  # Replace with your output file path
 response_file = 'response_geonames.json'  # Replace with your response file path
 process_file(input_file, output_file, response_file)
-
-
-# In[ ]:
-
 
 #evaluating results - umls 
 import openai
