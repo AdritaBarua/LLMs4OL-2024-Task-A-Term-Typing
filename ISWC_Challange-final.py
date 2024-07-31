@@ -219,9 +219,13 @@ create_fine_tuning_job(training_file_id, model="gpt-3.5-turbo-0125", suffix="wor
 
 # Retrieve the state of a fine-tune
 client.fine_tuning.jobs.retrieve("ftjob-13vPfnbqztHnpD9Awq8TT4xd") # replace with your job id
+
+
 # ==============================================================================
 # Evaluating Results - WordNet
 # ==============================================================================
+
+
 import openai
 
 # Define your OpenAI API key
