@@ -202,7 +202,7 @@ upload_file_for_fine_tuning("wordnet_train.jsonl")
 # Creating the Fine-Tuning Job
 # ==============================================================================
 
-def create_fine_tuning_job(training_file_id, model="gpt-3.5-turbo-0125", suffix="Biological_p_all"):
+def create_fine_tuning_job(training_file_id, model="gpt-3.5-turbo-0125", suffix="wordnet_all"):
     try:
         response = client.fine_tuning.jobs.create(
             training_file=training_file_id,
@@ -215,4 +215,242 @@ def create_fine_tuning_job(training_file_id, model="gpt-3.5-turbo-0125", suffix=
 
 # Example usage
 training_file_id = "file-tAzN3X2PJfZk1RHJdDlYYBcd"  # replace with your training file id
-create
+create_fine_tuning_job(training_file_id, model="gpt-3.5-turbo-0125", suffix="wordnet_all")  # Change model and suffix as needed
+
+# Retrieve the state of a fine-tune
+client.fine_tuning.jobs.retrieve("ftjob-13vPfnbqztHnpD9Awq8TT4xd") # replace with your job id
+# ==============================================================================
+# Evaluating Results - WordNet
+# ==============================================================================
+import openai
+
+# Define your OpenAI API key
+from openai import OpenAI
+client = OpenAI(api_key = 'Your OpenAI key')
+
+def get_term_types(term, sentence):
+    if sentence:
+        prompt = f"Perform a sentence completion on the following sentence: The part of speech of the term \"{term}\" in the sentence \"{sentence}\" is ___"
+    else:
+        prompt = f"Perform a sentence completion on the following sentence: The part of speech of the term \"{term}\" is ___"
+    try:
+        response = client.chat.completions.create(
+            model="ft:gpt-3.5-turbo-0125:kansas-state-university:wordnet-all:9gNNcSRE",  # change to your finetuned model name
+            messages=[{'role': 'user', 'content': prompt}],
+            #max_tokens=50,
+            #n=1,
+            #stop=None,
+            temperature=0.0,
+        )
+        completion_text = response.choices[0].message.content.strip()
+        # Extract the types from the completion text
+        if "is" in completion_text:
+            types_start_index = completion_text.index("is") + len("is")
+            types_text = completion_text[types_start_index:].strip()
+            # Remove trailing period if present
+            if types_text.endswith("."):
+                types_text = types_text[:-1]
+            types = [t.strip() for t in types_text.split(",")]
+        else:
+            types = []
+        return types
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return []
+
+def process_file(input_file, output_file):
+    with open(input_file, 'r') as infile:
+        data = json.load(infile)
+
+    results = []
+
+    for entry in data:
+        term = entry['term']
+        sentence = entry['sentence']
+        types = get_term_types(term, sentence)
+        results.append({
+            "ID": entry['ID'],
+            "type": types
+        })
+
+    with open(output_file, 'w') as outfile:
+        json.dump(results, outfile, indent=4)
+
+# Example usage
+input_file = 'A.1(FS)_WordNet_Test.json'  # Replace with your input file path
+output_file = 'output_wordnet.json'  # Replace with your output file path
+process_file(input_file, output_file)
+
+#Cleaning up the output file - wordnet
+import json
+
+def extract_last_word_from_type(input_file, output_file):
+    with open(input_file, 'r') as infile:
+        data = json.load(infile)
+
+    results = []
+
+    for entry in data:
+        types = entry['type']
+        # Extract the last word from each type entry
+        last_words = [t.split()[-1] for t in types]
+        results.append({
+            "ID": entry['ID'],
+            "type": last_words
+        })
+
+    with open(output_file, 'w') as outfile:
+        json.dump(results, outfile, indent=4)
+
+# Example usage
+input_file = 'output_wordnet.json'  # Replace with your input file path
+output_file = 'output_wordnet_new.json'  # Replace with your output file path
+extract_last_word_from_type(input_file, output_file)
+
+
+# ==============================================================================
+# Evaluating Results - GeoNames
+# ==============================================================================
+ 
+import openai
+import json
+from openai import OpenAI
+client = OpenAI(api_key = 'Your OpenAI key')
+
+
+def get_term_types(term):
+    prompt = f"Perform a sentence completion on the following sentence: \"{term}\" geographically is a ___."
+    try:
+        response = client.chat.completions.create(
+            model="ft:gpt-3.5-turbo-0125:kansas-state-university:geonames-10percent:9gnjksT9",  # change to your finetuned model name
+            messages=[{'role': 'user', 'content': prompt}],
+            temperature=0.0,
+        )
+        completion_text = response.choices[0].message.content.strip()
+        
+        # Extract the words after "is a" from the completion text
+        if "is a" in completion_text:
+            types_text = completion_text.split("is a", 1)[1].strip()
+            # Remove trailing period if present
+            if types_text.endswith("."):
+                types_text = types_text[:-1]
+            types = [t.strip() for t in types_text.split(",")]
+        else:
+            types = []
+        
+        return types, completion_text
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None, None
+
+def process_file(input_file, output_file, response_file):
+    with open(input_file, 'r') as infile:
+        data = json.load(infile)
+
+    results = []
+    responses = []
+
+    for entry in data:
+        term = entry['term']
+        last_word, completion_text = get_term_types(term)
+        if last_word and completion_text:
+            result = {
+                "ID": entry['ID'],
+                "type": last_word
+            }
+            response = {
+                "ID": entry['ID'],
+                "response": completion_text
+            }
+            results.append(result)
+            responses.append(response)
+
+            # Write the results and responses to files as the code runs
+            with open(output_file, 'w') as outfile:
+                json.dump(results, outfile, indent=4)
+            
+            with open(response_file, 'w') as respfile:
+                json.dump(responses, respfile, indent=4)
+
+            # Print the extracted types for the term
+            print(f"Extracted types for term '{term}': {result['type']}")
+
+# Example usage
+input_file = 'A.2(FS)_GeoNames_Test.json'  # Replace with your input file path
+output_file = 'output_geonames.json'  # Replace with your output file path
+response_file = 'response_geonames.json'  # Replace with your response file path
+process_file(input_file, output_file, response_file)
+
+# ==============================================================================
+# Evaluating Results - UMLS
+# ==============================================================================
+
+import openai
+import json
+from openai import OpenAI
+client = OpenAI(api_key = 'your OpenAI key')
+
+
+def get_term_types(term):
+    prompt = f"Perform a sentence completion on the following sentence: \"{term}\" in medicine can be described as ___ ."
+    try:
+        response = client.chat.completions.create(
+            model="ft:gpt-3.5-turbo-0125:kansas-state-university:nci-all:9lWu1IfQ",  # change to your finetuned model name
+            messages=[{'role': 'user', 'content': prompt}],
+            temperature=0.0,
+        )
+        completion_text = response.choices[0].message.content.strip()
+        
+        # Extract the words after "as" from the completion text
+        if "as" in completion_text:
+            types_text = completion_text.split("as", 1)[1].strip()
+            # Remove trailing period if present
+            if types_text.endswith("."):
+                types_text = types_text[:-1]
+            types = [t.strip() for t in types_text.split(",")]
+        else:
+            types = []
+        
+        return types, completion_text
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None, None
+
+def process_file(input_file, output_file, response_file):
+    with open(input_file, 'r') as infile:
+        data = json.load(infile)
+
+    results = []
+    responses = []
+
+    for entry in data:
+        term = entry['term']
+        last_word, completion_text = get_term_types(term)
+        if last_word and completion_text:
+            result = {
+                "ID": entry['ID'],
+                "type": last_word
+            }
+            response = {
+                "ID": entry['ID'],
+                "response": completion_text
+            }
+            results.append(result)
+            responses.append(response)
+
+            # Write the results and responses to files as the code runs
+            with open(output_file, 'w') as outfile:
+                json.dump(results, outfile, indent=4)
+            
+            with open(response_file, 'w') as respfile:
+                json.dump(responses, respfile, indent=4)
+
+            # Print the extracted types for the term
+            print(f"Extracted types for term '{term}': {result['type']}")
+
+# Example usage
+input_file = 'A.3(FS)_UMLS_NCI_Test.json'  # Replace with your input file path
+output_file = 'output_nci.json'  # Replace with your output file path
+response_file = 'response_nci.json'  # Replace with your response file path
+process_file(input_file, output_file, response_file)
+
