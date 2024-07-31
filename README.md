@@ -1,1 +1,2 @@
-The source code used for fine-tuning the gpt-3.5-turbo-0125 model for the LLMs4OL challage: Task A (Term typing) can be found here. 
+The source code used for fine-tuning and evaluating the gpt-3.5-turbo-0125 model for the LLMs4OL Challenge: Task A (Term Typing) can be found here. Three datasets(WordNet, GeoNames and UMLS) were used to fine-tune the individual models. A detailed description of the datasets can be found [here](https://sites.google.com/view/llms4ol/task-a-term-typing?authuser=0). The models were fine-tuned using the [OpenAI fine-tuning](https://platform.openai.com/docs/guides/fine-tuning/preparing-your-dataset) instructions.
+
